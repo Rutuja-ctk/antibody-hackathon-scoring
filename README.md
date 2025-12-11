@@ -57,13 +57,13 @@ The names `design_X` and `design_Y` can be anything. Only extensions matter.
 
 There is a `TEAM_Example` folder in this repo that shows a complete example and can be used to test the pipeline.
 There is all_teams.py script and command line to run all team designs in one go ( meant for organizing team)
----
+
 
 ## 2. External tools needed
 
 Install these tools and make sure they work from the same Python environment.
 
-Python packages
+## Python packages
 
 ```bash
 pip install "numpy<2.0" pandas biopython openpyxl
@@ -71,7 +71,7 @@ pip install "numpy<2.0" pandas biopython openpyxl
 
 or similar `conda` commands.
 
-PRODIGY
+## PRODIGY
 
 Used for binding affinity and contacts.
 
@@ -82,7 +82,7 @@ Used for binding affinity and contacts.
 prodigy -h
 ```
 
-ipSAE
+## ipSAE
 
 Used for ipSAE score and interface pLDDT.
 
@@ -93,7 +93,7 @@ Used for ipSAE score and interface pLDDT.
 ipsae -h
 ```
 
-NetSolP 1.0
+## NetSolP 1.0
 
 Used for solubility.
 
@@ -106,7 +106,7 @@ python predict.py --help
 
 Path to NetSolP is configured inside `src/abscore/tools_developability.py`, see comments there.
 
-DockQ (Challenge 1 only)
+## DockQ (Challenge 1 only)
 
 Used to compare predicted complex to a native reference.
 
@@ -188,7 +188,7 @@ python scripts/run_team_folder.py \
 
 DockQ is automatically skipped for Challenge 2.
 
-If you want to run both challenges back to back for a single team on Windows Command Prompt, you can chain:
+## If you want to run both challenges back to back for a single team on Windows Command Prompt, you can chain:
 ```bash
 python scripts\run_team_folder.py ...Challenge1... ^
 && ^
@@ -245,6 +245,4 @@ Each row contains team id, challenge id, design id, raw metrics, per metric scor
 
 ```
 
-You can just paste that into the GitHub README editor and commit.
-::contentReference[oaicite:0]{index=0}
-```
+
