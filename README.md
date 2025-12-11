@@ -1,12 +1,4 @@
-Here is your README cleaned up with:
 
-* clear Windows vs Linux/macOS commands
-* clearer NetSolP explanation
-* fixed code blocks and formatting
-
-You can paste this directly into `README.md` on GitHub.
-
-````markdown
 # Antibody Hackathon Scoring Pipeline
 
 This repo provides a small scoring pipeline for antibody hackathon submissions.
