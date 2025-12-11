@@ -1,0 +1,245 @@
+from typing import Optional, Dict, Any
+import numpy as np
+
+from .models import DesignInput, RawMetrics, ScoreComponents
+
+
+# Per metric scoring, output 0 to 10
+
+def score_delta_g(delta_g: float) -> float:
+    if delta_g <= -12:
+        return 10.0
+    elif delta_g <= -10:
+        return 7.0
+    elif delta_g <= -8:
+        return 4.0
+    elif delta_g <= -6:
+        return 2.0
+    else:
+        return 0.0
+
+
+def score_contacts(contacts: int) -> float:
+    if contacts > 25:
+        return 10.0
+    elif contacts >= 15:
+        return 7.0
+    elif contacts >= 10:
+        return 4.0
+    else:
+        return 0.0
+
+
+def score_dockq(dockq: Optional[float]) -> Optional[float]:
+    if dockq is None:
+        return None
+    if dockq >= 0.8:
+        return 10.0
+    elif dockq >= 0.49:
+        return 7.0
+    elif dockq >= 0.23:
+        return 4.0
+    else:
+        return 1.0
+
+
+def score_iface_plddt(plddt: float) -> float:
+    if plddt > 80:
+        return 10.0
+    elif plddt >= 70:
+        return 7.0
+    elif plddt >= 65:
+        return 4.0
+    else:
+        return 0.0
+
+
+def score_ipsae(ipsae_val: float) -> float:
+    if ipsae_val >= 0.8:
+        return 10.0
+    elif ipsae_val >= 0.6:
+        return 7.0
+    elif ipsae_val >= 0.4:
+        return 4.0
+    else:
+        return 1.0
+
+
+def score_camsol(camsol: float) -> float:
+    if camsol > 0.4:
+        return 10.0
+    elif camsol > -1.0:
+        return 7.0
+    elif camsol > -1.5:
+        return 4.0
+    else:
+        return 1.0
+
+
+def score_aggscore(agg: float) -> float:
+    if agg < 50:
+        return 10.0
+    elif agg <= 120:
+        return 7.0
+    elif agg < 200:
+        return 4.0
+    else:
+        return 1.0
+
+
+def score_cdr3_identity(identity_percent: float) -> float:
+    if identity_percent < 70:
+        return 10.0
+    elif identity_percent < 90:
+        return 7.0
+    elif identity_percent < 95:
+        return 4.0
+    else:
+        return 1.0
+
+
+# Minimum requirements
+
+def check_minimum_requirements(raw: RawMetrics) -> tuple[bool, str]:
+    if raw.delta_g is None or raw.delta_g > -6:
+        return False, "DeltaG too weak or missing"
+    if raw.contacts is None or raw.contacts < 10:
+        return False, "Too few contacts"
+    if raw.iface_plddt is None or raw.iface_plddt < 65:
+        return False, "Interface pLDDT too low"
+    if raw.ipsae is None or raw.ipsae < 0.6:
+        return False, "ipSAE too low"
+
+    if raw.camsol is None or raw.camsol <= -1.5:
+        return False, "CamSol too low"
+    if raw.aggscore is None or raw.aggscore >= 200:
+        return False, "AggScore too high"
+
+    if raw.cdr3_identity is None or raw.cdr3_identity >= 95:
+        return False, "CDR3 too similar"
+    if raw.anarci_pass is False:
+        return False, "ANARCI or QC failed"
+
+    return True, ""
+
+
+# Main scoring
+
+def score_design(raw: RawMetrics) -> ScoreComponents:
+    scores = ScoreComponents()
+
+    ok, reason = check_minimum_requirements(raw)
+    scores.is_viable = ok
+    scores.fail_reason = None if ok else reason
+
+    # Binding sub scores
+    if raw.delta_g is not None:
+        scores.delta_g_score = score_delta_g(raw.delta_g)
+    if raw.contacts is not None:
+        scores.contacts_score = score_contacts(raw.contacts)
+    if raw.dockq is not None:
+        scores.dockq_score = score_dockq(raw.dockq)
+    if raw.iface_plddt is not None:
+        scores.iface_plddt_score = score_iface_plddt(raw.iface_plddt)
+    if raw.ipsae is not None:
+        scores.ipsae_score = score_ipsae(raw.ipsae)
+
+    # Developability sub scores
+    if raw.camsol is not None:
+        scores.camsol_score = score_camsol(raw.camsol)
+    if raw.aggscore is not None:
+        scores.aggscore_score = score_aggscore(raw.aggscore)
+
+    # Novelty sub score
+    if raw.cdr3_identity is not None:
+        scores.novelty_score = score_cdr3_identity(raw.cdr3_identity)
+
+    # Category scores
+    binding_subs = [
+        s for s in [
+            scores.delta_g_score,
+            scores.contacts_score,
+            scores.dockq_score,
+            scores.iface_plddt_score,
+            scores.ipsae_score,
+        ] if s is not None
+    ]
+    scores.binding_struct_score = float(np.mean(binding_subs)) if binding_subs else None
+
+    develop_subs = [
+        s for s in [
+            scores.camsol_score,
+            scores.aggscore_score,
+        ] if s is not None
+    ]
+    scores.developability_score = float(np.mean(develop_subs)) if develop_subs else None
+
+    scores.novelty_category_score = scores.novelty_score
+
+    # Final weighted score: 60 percent binding, 20 percent developability, 20 percent novelty
+    if (
+        scores.binding_struct_score is not None
+        and scores.developability_score is not None
+        and scores.novelty_category_score is not None
+    ):
+        B = scores.binding_struct_score
+        D = scores.developability_score
+        N = scores.novelty_category_score
+
+        final_10 = 0.60 * B + 0.20 * D + 0.20 * N
+        scores.final_score_10 = final_10
+        scores.final_score_100 = final_10 * 10.0
+
+    return scores
+
+
+def build_result_row(
+    design: DesignInput,
+    raw: RawMetrics,
+    scores: ScoreComponents,
+) -> Dict[str, Any]:
+    row: Dict[str, Any] = {
+        "team_name": design.team_name,
+        "design_id": design.design_id,
+    }
+
+    row.update(
+        {
+            "delta_g": raw.delta_g,
+            "contacts": raw.contacts,
+            "dockq": raw.dockq,
+            "iface_plddt": raw.iface_plddt,
+            "ipsae": raw.ipsae,
+            "camsol": raw.camsol,
+            "aggscore": raw.aggscore,
+            "cdr3_identity": raw.cdr3_identity,
+            "anarci_pass": raw.anarci_pass,
+        }
+    )
+
+    row.update(
+        {
+            "delta_g_score": scores.delta_g_score,
+            "contacts_score": scores.contacts_score,
+            "dockq_score": scores.dockq_score,
+            "iface_plddt_score": scores.iface_plddt_score,
+            "ipsae_score": scores.ipsae_score,
+            "camsol_score": scores.camsol_score,
+            "aggscore_score": scores.aggscore_score,
+            "novelty_score": scores.novelty_score,
+        }
+    )
+
+    row.update(
+        {
+            "binding_struct_score": scores.binding_struct_score,
+            "developability_score": scores.developability_score,
+            "novelty_category_score": scores.novelty_category_score,
+            "final_score_10": scores.final_score_10,
+            "final_score_100": scores.final_score_100,
+            "is_viable": scores.is_viable,
+            "fail_reason": scores.fail_reason,
+        }
+    )
+
+    return row

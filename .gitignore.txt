@@ -1,0 +1,23 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual envs
+.venv/
+env/
+venv/
+
+# Large or generated outputs
+metrics/
+ALL_TEAMS/_extracted/
+ALL_TEAMS/hackathon_all_teams*.csv
+ALL_TEAMS/hackathon_all_teams*.xlsx
+*/metrics/hackathon_final_scores*.csv
+*/metrics/hackathon_final_scores*.xlsx
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS stuff
+.DS_Store
+Thumbs.db

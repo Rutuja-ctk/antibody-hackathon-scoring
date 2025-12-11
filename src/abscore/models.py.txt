@@ -1,0 +1,66 @@
+from dataclasses import dataclass
+from typing import Optional
+
+
+@dataclass
+class DesignInput:
+    """
+    Minimal info to identify a design.
+    """
+    team_name: str
+    design_id: str
+    heavy_seq: Optional[str] = None
+    light_seq: Optional[str] = None
+    antibody_pdb_path: Optional[str] = None
+
+
+@dataclass
+class RawMetrics:
+    """
+    Raw numerical metrics for one design.
+    """
+    # Binding and structural quality
+    delta_g: Optional[float] = None        # kcal per mol
+    contacts: Optional[int] = None         # interface contacts
+    dockq: Optional[float] = None          # 0 to 1 (optional)
+    iface_plddt: Optional[float] = None    # 0 to 100
+    ipsae: Optional[float] = None          # 0 to 1
+
+    # Developability
+    camsol: Optional[float] = None         # CamSol score
+    aggscore: Optional[float] = None       # AggScore or similar
+
+    # Novelty and QC
+    cdr3_identity: Optional[float] = None  # percent identity vs reference
+    anarci_pass: Optional[bool] = None     # True if ANARCI or QC passes
+
+
+@dataclass
+class ScoreComponents:
+    """
+    Per metric, per category and final scores for one design.
+    """
+    # Sub scores
+    delta_g_score: Optional[float] = None
+    contacts_score: Optional[float] = None
+    dockq_score: Optional[float] = None
+    iface_plddt_score: Optional[float] = None
+    ipsae_score: Optional[float] = None
+
+    camsol_score: Optional[float] = None
+    aggscore_score: Optional[float] = None
+
+    novelty_score: Optional[float] = None
+
+    # Category scores
+    binding_struct_score: Optional[float] = None
+    developability_score: Optional[float] = None
+    novelty_category_score: Optional[float] = None
+
+    # Final scores
+    final_score_10: Optional[float] = None
+    final_score_100: Optional[float] = None
+
+    # Viability
+    is_viable: bool = True
+    fail_reason: Optional[str] = None
