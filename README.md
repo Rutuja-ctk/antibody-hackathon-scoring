@@ -87,12 +87,12 @@ prodigy -h
 
 Used for ipSAE score and interface pLDDT.
 
-*Install
+* Install
 
 ```bash
 pip install ipsae
 ```
-*Check:
+* Check:
 
 ```bash
 ipsae -h
