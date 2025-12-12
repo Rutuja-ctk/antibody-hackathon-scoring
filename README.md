@@ -87,18 +87,22 @@ prodigy -h
 
 Used for ipSAE score and interface pLDDT.
 
-* Install according to ipSAE docs: [https://github.com/DunbrackLab/IPSAE](https://github.com/DunbrackLab/IPSAE)
-* Check:
+*Install
+
+```bash
+pip install ipsae
+```
+*Check:
 
 ```bash
 ipsae -h
 ```
-
 ### NetSolP 1.0
 
 Used for solubility.
 
-* Clone or download NetSolP 1.0 and its ONNX models.
+* Clone or download NetSolP 1.0(git) and its ONNX models(netsolp-1.0.ALL.tar.gz ).
+* once you have downloaded both ,from the netsolp-1.0.ALL.tar.gz extract models(ONNX and models) files and copy to PredictionServer\models of the NetSolP1.0( cloned from git)
 * Check that you can run something like:
 
 ```bash
@@ -107,14 +111,14 @@ python predict.py --help
 
 You must tell the pipeline where NetSolP lives.
 
-Open `src/abscore/tools_developability.py` and set the `NETSOLP_PREDICT` variable so it points to your own `predict.py`:
+Open `src/abscore/tools_developability.py` and set the `netsolp_root: str`(you'll find this twice in developability.py) variable so it points to your own `predict.py`:
 
 ```python
 # Example on Linux/macOS
-NETSOLP_PREDICT = "/home/user/tools/NetSolP-1.0/PredictionServer/predict.py"
+netsolp_root: str = "/home/user/tools/NetSolP-1.0"
 
 # Example on Windows
-NETSOLP_PREDICT = r"C:\Users\User\NetSolP-1.0\PredictionServer\predict.py"
+netsolp_root: str = r"C:\Users\RUTUJA\Documents\NetSolP-1.0"
 ```
 
 Edit that path to match your setup.
