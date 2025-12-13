@@ -298,22 +298,38 @@ def compute_cdr_sasa(
     return cdr_sasa
 
 
+import os
+import subprocess
+import sys
+from typing import Optional
+
+
 def run_dockq(
     model_complex_pdb: str,
     native_complex_pdb: str,
     dockq_script: Optional[str] = None,
+    allowed_mismatches: int = 20,
 ) -> Optional[float]:
     """
-    Run DockQ as a plain Python script:
+    Run DockQ on a model complex versus a native complex and return the DockQ score.
 
-        python <dockq_script> model.pdb native.pdb
+    Parameters
+    ----------
+    model_complex_pdb : str
+        Path to the predicted antibody antigen complex PDB.
+    native_complex_pdb : str
+        Path to the native reference complex PDB.
+    dockq_script : str, optional
+        Path to DockQ.py (for example /path/to/DockQ/src/DockQ/DockQ.py).
+        If None, DEFAULT_DOCKQ_SCRIPT is used.
+    allowed_mismatches : int
+        Value passed to DockQ --allowed_mismatches to tolerate small sequence
+        differences between model and native (for example ColabFold models).
 
-    dockq_script can be passed explicitly, or taken from:
-      1) function argument
-      2) DEFAULT_DOCKQ_SCRIPT (env DOCKQ_SCRIPT or local default)
-
-    Returns:
-        dockq_score in [0, 1], or None if anything fails.
+    Returns
+    -------
+    float or None
+        DockQ score in [0, 1] if parsing succeeds, otherwise None.
     """
     model_complex_pdb = os.path.abspath(model_complex_pdb)
     native_complex_pdb = os.path.abspath(native_complex_pdb)
@@ -333,6 +349,8 @@ def run_dockq(
     cmd = [
         sys.executable,
         script,
+        "--allowed_mismatches",
+        str(allowed_mismatches),
         model_complex_pdb,
         native_complex_pdb,
     ]
@@ -342,7 +360,7 @@ def run_dockq(
             cmd,
             text=True,
             capture_output=True,
-            encoding="utf-8",
+            encoding="utf 8",
             errors="replace",
         )
     except Exception as e:
@@ -355,12 +373,12 @@ def run_dockq(
     for i, line in enumerate(output.splitlines()[:10], 1):
         print(f"    {i:2d}: {line}")
 
+    score: Optional[float] = None
+
     patterns = [
         r"DockQ\s*[=:]\s*([0-9]*\.[0-9]+)",
         r"^DockQ\s+([0-9]*\.[0-9]+)",
     ]
-
-    score: Optional[float] = None
 
     for pat in patterns:
         m = re.search(pat, output, flags=re.IGNORECASE | re.MULTILINE)
